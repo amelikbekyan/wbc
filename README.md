@@ -1,5 +1,7 @@
 # wbc — Webcam Background Changer
 
+[![CI](https://github.com/amelikbekyan/wbc/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/amelikbekyan/wbc/actions/workflows/ci.yml)
+
 Replaces the background of a webcam and presents the result as a second
 camera, which Zoom, Google Meet, Microsoft Teams, OBS and any browser can
 select like any other. The person stays; the room behind them is blurred,
