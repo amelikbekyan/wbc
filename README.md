@@ -67,11 +67,11 @@ ones you downloaded with `sha256sum --check --ignore-missing SHA256SUMS`.
 
 ### Ubuntu 26.04 and Debian 13
 
-Download `wbc_0.1.0-1~ubuntu26.04_amd64.deb` or
-`wbc_0.1.0-1~debian13_amd64.deb`, then:
+Download `wbc_0.1.0-1.ubuntu26.04_amd64.deb` or
+`wbc_0.1.0-1.debian13_amd64.deb`, then:
 
 ```bash
-sudo apt install ./wbc_0.1.0-1~ubuntu26.04_amd64.deb
+sudo apt install ./wbc_0.1.0-1.ubuntu26.04_amd64.deb
 ```
 
 apt also installs the recommended `v4l2loopback-dkms`, which builds the

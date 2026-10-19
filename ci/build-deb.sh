@@ -24,5 +24,11 @@ cmake --build "${build}"
 ctest --test-dir "${build}" -L "unit|ui" --output-on-failure
 (cd "${build}" && cpack -G DEB)
 mkdir -p dist
-cp "${build}"/wbc_*"~${distro}"_*.deb dist/
+# GitHub turns the tilde of a release file's name into a dot, and then
+# SHA256SUMS and the README would name files the release does not have. So
+# the file is named as GitHub would show it; the version inside the package
+# keeps the tilde.
+for deb in "${build}"/wbc_*"~${distro}"_*.deb; do
+    cp "${deb}" "dist/$(basename "${deb}" | tr '~' '.')"
+done
 ls -l dist

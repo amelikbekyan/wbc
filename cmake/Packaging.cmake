@@ -53,9 +53,10 @@ set(CPACK_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
     OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 # The same version is built for more than one distribution, and each needs a
-# file of its own: wbc_0.1.0-1~ubuntu26.04_amd64.deb. The tilde sorts the
-# package below a plain 0.1.0-1, as Debian does for backports. Empty keeps the
-# name a build from source has always had.
+# file of its own: wbc_0.1.0-1~ubuntu26.04_amd64.deb, which ci/build-deb.sh
+# names with a dot for GitHub. The tilde sorts the package below a plain
+# 0.1.0-1, as Debian does for backports. Empty keeps the name a build from
+# source has always had.
 set(WBC_PACKAGE_DISTRO "" CACHE STRING
     "The distribution a Debian package is built for, e.g. ubuntu26.04, put in its release")
 if (WBC_PACKAGE_DISTRO)
