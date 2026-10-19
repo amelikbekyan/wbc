@@ -1,0 +1,15 @@
+#!/bin/sh
+# SPDX-FileCopyrightText: 2026 Arthur Melikbekyan
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# On purge, removes the two files wbc-setup-loopback wrote. The module is
+# left loaded: something may be streaming into it, and it goes at the next
+# reboot now that nothing asks for it.
+
+set -e
+
+if [ "$1" = "purge" ]; then
+    rm -f "@WBC_ETC@/modules-load.d/wbc.conf" "@WBC_ETC@/modprobe.d/wbc.conf"
+fi
+
+exit 0

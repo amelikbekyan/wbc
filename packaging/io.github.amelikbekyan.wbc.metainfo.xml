@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SPDX-FileCopyrightText: 2026 Arthur Melikbekyan
+  SPDX-License-Identifier: CC0-1.0
+
+  What software centres and Flathub show for the program. The metadata itself
+  is CC0, as AppStream asks, so that catalogues may copy it freely.
+-->
+<component type="desktop-application">
+  <id>io.github.amelikbekyan.wbc</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+
+  <name>Webcam Background Changer</name>
+  <summary>Blur or replace the background of your webcam</summary>
+  <summary xml:lang="ru">Размытие или замена фона веб-камеры</summary>
+  <summary xml:lang="de">Den Hintergrund der Webcam weichzeichnen oder ersetzen</summary>
+  <summary xml:lang="fr">Flouter ou remplacer l’arrière-plan de votre webcam</summary>
+  <summary xml:lang="es">Difumina o sustituye el fondo de tu cámara web</summary>
+
+  <developer id="io.github.amelikbekyan">
+    <name>Arthur Melikbekyan</name>
+  </developer>
+
+  <description>
+    <p>
+      Webcam Background Changer takes your real camera, blurs the room behind
+      you or replaces it with a picture, a video or a solid colour, and offers
+      the result as a second camera. Zoom, Google Meet, Microsoft Teams, OBS
+      and any browser can choose it like any other camera.
+    </p>
+    <p xml:lang="ru">
+      Webcam Background Changer берёт изображение с настоящей камеры, размывает
+      комнату за вами или заменяет её картинкой, видео или однотонным цветом и
+      отдаёт результат как вторую камеру. Zoom, Google Meet, Microsoft Teams,
+      OBS и любой браузер выбирают её как обычную камеру.
+    </p>
+    <p xml:lang="de">
+      Webcam Background Changer nimmt das Bild Ihrer echten Kamera, zeichnet den
+      Raum hinter Ihnen weich oder ersetzt ihn durch ein Bild, ein Video oder
+      eine Farbe und stellt das Ergebnis als zweite Kamera bereit. Zoom, Google
+      Meet, Microsoft Teams, OBS und jeder Browser können sie wie jede andere
+      Kamera auswählen.
+    </p>
+    <p xml:lang="fr">
+      Webcam Background Changer prend votre vraie caméra, floute la pièce
+      derrière vous ou la remplace par une image, une vidéo ou une couleur
+      unie, et présente le résultat comme une seconde caméra. Zoom, Google Meet,
+      Microsoft Teams, OBS et tout navigateur peuvent la choisir comme
+      n’importe quelle autre caméra.
+    </p>
+    <p xml:lang="es">
+      Webcam Background Changer toma tu cámara real, difumina la habitación
+      que hay detrás de ti o la sustituye por una imagen, un vídeo o un color
+      liso, y ofrece el resultado como una segunda cámara. Zoom, Google Meet,
+      Microsoft Teams, OBS y cualquier navegador pueden elegirla como cualquier
+      otra cámara.
+    </p>
+    <p>
+      It runs on the processor, with no graphics card needed: at 1280x720 a
+      frame takes about 13 ms, for about half of one processor core. The
+      virtual camera is a v4l2loopback device, which the program sets up once,
+      with your password, and which then comes back at every boot.
+    </p>
+    <p xml:lang="ru">
+      Программа работает на процессоре, видеокарта не нужна: кадр 1280x720
+      обрабатывается примерно за 13 мс, это около половины одного ядра.
+      Виртуальная камера — устройство v4l2loopback; программа один раз
+      настраивает его с вашим паролем, и дальше оно появляется при каждой
+      загрузке.
+    </p>
+    <p xml:lang="de">
+      Es läuft auf dem Prozessor, eine Grafikkarte ist nicht nötig: Ein Bild in
+      1280x720 dauert etwa 13 ms, bei etwa einem halben Prozessorkern. Die
+      virtuelle Kamera ist ein v4l2loopback-Gerät, das das Programm einmalig mit
+      Ihrem Passwort einrichtet und das danach bei jedem Systemstart wieder da
+      ist.
+    </p>
+    <p xml:lang="fr">
+      Il fonctionne sur le processeur, sans carte graphique : une image en
+      1280x720 prend environ 13 ms, pour environ la moitié d’un cœur. La caméra
+      virtuelle est un périphérique v4l2loopback, que le programme configure
+      une seule fois avec votre mot de passe et qui revient ensuite à chaque
+      démarrage.
+    </p>
+    <p xml:lang="es">
+      Funciona en el procesador, sin tarjeta gráfica: un fotograma de 1280x720
+      tarda unos 13 ms, con aproximadamente medio núcleo del procesador. La
+      cámara virtual es un dispositivo v4l2loopback que el programa configura
+      una sola vez con tu contraseña y que después vuelve en cada arranque.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">wbc.desktop</launchable>
+  <provides>
+    <binary>wbc</binary>
+  </provides>
+
+  <url type="homepage">https://github.com/amelikbekyan/wbc</url>
+  <url type="bugtracker">https://github.com/amelikbekyan/wbc/issues</url>
+  <url type="vcs-browser">https://github.com/amelikbekyan/wbc</url>
+  <url type="translate">https://github.com/amelikbekyan/wbc/tree/main/i18n</url>
+
+  <categories>
+    <category>AudioVideo</category>
+    <category>Video</category>
+  </categories>
+  <keywords>
+    <keyword>webcam</keyword>
+    <keyword>camera</keyword>
+    <keyword>background</keyword>
+    <keyword>blur</keyword>
+    <keyword>virtual camera</keyword>
+  </keywords>
+
+  <!-- The window fits 1024x600 at the smallest; ScreenFitTest holds it to
+       that. -->
+  <requires>
+    <display_length compare="ge">600</display_length>
+  </requires>
+  <recommends>
+    <control>pointing</control>
+  </recommends>
+  <supports>
+    <control>keyboard</control>
+  </supports>
+
+  <content_rating type="oars-1.1"/>
+
+  <!-- Screenshots are added once there are some to show. -->
+</component>

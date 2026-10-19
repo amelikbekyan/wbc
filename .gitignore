@@ -1,0 +1,33 @@
+# Build output. The presets in CMakePresets.json build under build/<preset>;
+# cmake-build-*/ is where CLion puts profiles of its own.
+build/
+build-*/
+cmake-build-*/
+*.user
+
+# Downloaded model weights (fetched by cmake/FetchModel.cmake)
+models/
+
+# Coverage artifacts
+*.gcda
+*.gcno
+*.gcov
+coverage/
+coverage.xml
+
+# Agent worktrees and scratch
+.claude/
+
+# IDE project files are per machine and per person; CMakeLists.txt is the
+# project definition every IDE reads.
+.idea/
+
+# clangd: symlink to the generated compile database in build/
+/compile_commands.json
+
+# clangd index cache
+.cache/
+
+# Planning documents written for the coding agent while the project was
+# built. What they decided, and why, is in docs/engineering-notes.md.
+docs/superpowers/

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<!--
+  SPDX-FileCopyrightText: 2026 Arthur Melikbekyan
+  SPDX-License-Identifier: GPL-3.0-or-later
+
+  Without this, pkexec falls back to its own action, whose prompt says that
+  a program wants to run modprobe as root: alarming, and nothing in it says
+  which program or why. CMake fills in the helper's installed path, which
+  pkexec matches against the command it is asked to run.
+-->
+<policyconfig>
+  <vendor>Webcam Background Changer</vendor>
+  <icon_name>wbc</icon_name>
+
+  <action id="org.wbc.setup-loopback">
+    <description>Set up the virtual camera</description>
+    <description xml:lang="ru">Настроить виртуальную камеру</description>
+    <description xml:lang="de">Die virtuelle Kamera einrichten</description>
+    <description xml:lang="fr">Configurer la caméra virtuelle</description>
+    <description xml:lang="es">Configurar la cámara virtual</description>
+    <message>Webcam Background Changer needs to set up its virtual camera once</message>
+    <message xml:lang="ru">Webcam Background Changer нужно один раз настроить свою виртуальную камеру</message>
+    <message xml:lang="de">Webcam Background Changer muss seine virtuelle Kamera einmalig einrichten</message>
+    <message xml:lang="fr">Webcam Background Changer doit configurer sa caméra virtuelle une seule fois</message>
+    <message xml:lang="es">Webcam Background Changer necesita configurar su cámara virtual una sola vez</message>
+    <!-- Only someone at the machine, and only as an administrator. _keep, so
+         that a retry straight after a failure does not ask again. -->
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">@WBC_SETUP_HELPER@</annotate>
+  </action>
+</policyconfig>

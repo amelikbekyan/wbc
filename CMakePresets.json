@@ -1,0 +1,141 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "description": "Ninja, one build directory per preset under build/. /opt/onnxruntime is where ci/install-deps-ubuntu.sh puts ONNX Runtime on releases that do not package it; where it does not exist CMake ignores it and finds the system's.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_PREFIX_PATH": "/opt/onnxruntime"
+      }
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Release",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "coverage",
+      "displayName": "Coverage",
+      "description": "Instrumented for gcov. Run the tests, then build coverage-check.",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Coverage"
+      }
+    },
+    {
+      "name": "asan",
+      "displayName": "ASan",
+      "description": "AddressSanitizer and UndefinedBehaviorSanitizer.",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "ASan"
+      }
+    },
+    {
+      "name": "tsan",
+      "displayName": "TSan",
+      "description": "ThreadSanitizer. See CONTRIBUTING.md for telling this project's races from OpenCV's.",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "TSan"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "debug",
+      "configurePreset": "debug"
+    },
+    {
+      "name": "release",
+      "configurePreset": "release"
+    },
+    {
+      "name": "coverage",
+      "configurePreset": "coverage"
+    },
+    {
+      "name": "asan",
+      "configurePreset": "asan"
+    },
+    {
+      "name": "tsan",
+      "configurePreset": "tsan"
+    },
+    {
+      "name": "coverage-check",
+      "displayName": "Coverage gates",
+      "description": "Both gates. The relaxed one needs a camera and the virtual camera, and the hardware tests run.",
+      "configurePreset": "coverage",
+      "targets": [
+        "coverage-check"
+      ]
+    },
+    {
+      "name": "coverage-check-strict",
+      "displayName": "Coverage gate, hardware-independent",
+      "description": "The strict gate alone, which holds wherever the unit and ui tests run.",
+      "configurePreset": "coverage",
+      "targets": [
+        "coverage-check-strict"
+      ]
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "debug",
+      "inherits": "base",
+      "configurePreset": "debug"
+    },
+    {
+      "name": "release",
+      "inherits": "base",
+      "configurePreset": "release"
+    },
+    {
+      "name": "coverage",
+      "inherits": "base",
+      "configurePreset": "coverage"
+    },
+    {
+      "name": "asan",
+      "inherits": "base",
+      "configurePreset": "asan"
+    },
+    {
+      "name": "tsan",
+      "inherits": "base",
+      "configurePreset": "tsan",
+      "description": "Reports races without failing the run: ONNX Runtime's and Qt's own thread pools produce reports that are not this project's. See CONTRIBUTING.md for reading them.",
+      "environment": {
+        "TSAN_OPTIONS": "exitcode=0"
+      }
+    }
+  ]
+}

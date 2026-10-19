@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-FileCopyrightText: 2026 Arthur Melikbekyan -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- The room on the left, the new background on the right, the person in front: what the program does, readable down to 16 pixels. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <clipPath id="tile"><rect x="12" y="12" width="232" height="232" rx="56"/></clipPath>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a86ff"/><stop offset="1" stop-color="#8338ec"/>
+    </linearGradient>
+  </defs>
+  <g clip-path="url(#tile)">
+    <rect x="0" y="0" width="256" height="256" fill="#4a5462"/>
+    <rect x="0" y="0" width="256" height="256" fill="#5c6776" opacity="0.6"/>
+    <polygon points="146,0 256,0 256,256 86,256" fill="url(#sky)"/>
+    <circle cx="206" cy="66" r="20" fill="#ffd166"/>
+    <path d="M86 256 L176 150 L256 224 L256 256 Z" fill="#06d6a0"/>
+    <circle cx="128" cy="114" r="40" fill="#ffffff"/>
+    <path d="M44 256 C44 196 84 166 128 166 C172 166 212 196 212 256 Z" fill="#ffffff"/>
+  </g>
+</svg>

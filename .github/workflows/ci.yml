@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: 2026 Arthur Melikbekyan
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Builds on the oldest Ubuntu this project promises to support and runs every
+# test that needs no hardware. The hardware tests run too and report
+# themselves skipped: a runner has neither a camera nor v4l2loopback.
+#
+# Every command here is one a person can run by hand; ci/install-deps-ubuntu.sh
+# is shared with the README rather than duplicated into this file.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.preset }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        # The presets in CMakePresets.json, the same ones a person builds with.
+        preset: [release, coverage]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: ./ci/install-deps-ubuntu.sh
+
+      # The model is fetched at configure time and checked against a pinned
+      # hash, so a cached copy is only reused while that hash is unchanged.
+      - name: Cache the segmentation model
+        uses: actions/cache@v4
+        with:
+          path: models
+          key: model-${{ hashFiles('cmake/FetchModel.cmake') }}
+
+      # The release build is configured for /usr, as a Debian package must be:
+      # the prefix is compiled into the program and the polkit action.
+      - name: Configure
+        run: cmake --preset ${{ matrix.preset }} ${{ matrix.preset == 'release' && '-DCMAKE_INSTALL_PREFIX=/usr' || '' }}
+
+      - name: Build
+        run: cmake --build --preset ${{ matrix.preset }}
+
+      - name: Test
+        run: ctest --preset ${{ matrix.preset }}
+
+      # Only the strict gate: the relaxed one covers the camera and the
+      # virtual camera, and a runner has neither. See
+      # CONTRIBUTING.md for checking it before a release.
+      - name: Coverage gate
+        if: matrix.preset == 'coverage'
+        run: cmake --build --preset coverage-check-strict
+
+      # That the package builds, not that it is fit to ship: ONNX Runtime comes
+      # from /opt here, and the package neither declares nor carries it. See
+      # the TODO in cmake/Packaging.cmake.
+      - name: Debian package
+        if: matrix.preset == 'release'
+        working-directory: build/release
+        run: cpack -G DEB

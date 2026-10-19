@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name=Webcam Background Changer
+GenericName=Webcam Background Replacement
+Comment=Replace the background of a webcam and present the result as a second camera
+Comment[ru]=Заменяет фон веб-камеры и отдаёт результат как вторую камеру
+Comment[de]=Ersetzt den Hintergrund einer Webcam und stellt das Ergebnis als zweite Kamera bereit
+Comment[fr]=Remplace l'arrière-plan d'une webcam et présente le résultat comme une seconde caméra
+Comment[es]=Sustituye el fondo de una cámara web y presenta el resultado como una segunda cámara
+Exec=wbc
+Icon=wbc
+Terminal=false
+Categories=AudioVideo;Video;
+Keywords=webcam;camera;background;blur;virtual;
+StartupWMClass=wbc

@@ -1,0 +1,97 @@
+#!/bin/sh
+# SPDX-FileCopyrightText: 2026 Arthur Melikbekyan
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Sets up wbc's virtual camera once and for all: tells the system to load
+# v4l2loopback at every boot with wbc's options, and loads it now if it is
+# not loaded yet. Run as root -- through pkexec from the window, from the
+# Debian package's postinst, or by hand with sudo. Running it again changes
+# nothing that is already right.
+#
+# Usage: wbc-setup-loopback <label> <video number>
+#
+# Exit codes, which the window and the postinst tell apart:
+#   0  the device exists, or the module was loaded and will be at every boot
+#   1  anything else: bad arguments, a file that could not be written, a
+#      modprobe that failed
+#   2  v4l2loopback is not installed
+#   3  v4l2loopback is already loaded by something else, without our device;
+#      the setting takes effect at the next boot
+#
+# WBC_SETUP_ROOT and WBC_SETUP_MODPROBE exist for the tests alone, which run
+# this against a temporary directory and a fake modprobe. pkexec clears the
+# environment and sudo resets it, so neither reaches a run as root.
+
+set -u
+umask 022
+
+root="${WBC_SETUP_ROOT:-}"
+modprobe="${WBC_SETUP_MODPROBE:-modprobe}"
+
+fail() {
+    echo "wbc-setup-loopback: $1" >&2
+    exit "${2:-1}"
+}
+
+[ "$#" -eq 2 ] || fail "usage: wbc-setup-loopback <label> <video number>"
+label="$1"
+number="$2"
+
+# The same characters PkexecLoopbackAdmin keeps. The label ends up inside a
+# configuration line the kernel parses, so a quote in it would end the value
+# and anything after it would become another option.
+case "${label}" in
+    "" | *[!A-Za-z0-9_\ ]*) fail "the label may contain only letters, digits, spaces and underscores" ;;
+esac
+case "${number}" in
+    "" | *[!0-9]*) fail "the video number must be a non-negative integer" ;;
+esac
+# A leading zero would make 010 a different string from the 10 the window
+# looks for, and the kernel numbers devices below 256.
+if [ "${#number}" -gt 3 ] || [ "${number}" -gt 255 ] || { [ "${#number}" -gt 1 ] && [ "${number#0}" != "${number}" ]; }; then
+    fail "the video number must be between 0 and 255"
+fi
+
+options="devices=1 video_nr=${number} card_label=\"${label}\" exclusive_caps=1"
+
+# Writes the file only when its content differs, and through a rename, so a
+# file that is already right keeps its timestamp and a failure halfway never
+# leaves a truncated one behind.
+write_if_changed() {
+    path="$1"
+    content="$2"
+    mkdir -p "$(dirname "${path}")" || fail "could not create $(dirname "${path}")"
+    temporary="${path}.wbc-new"
+    printf '%s\n' "${content}" >"${temporary}" || fail "could not write ${path}"
+    if cmp -s "${temporary}" "${path}"; then
+        rm -f "${temporary}"
+    else
+        mv -f "${temporary}" "${path}" || fail "could not write ${path}"
+    fi
+}
+
+# Written before anything is checked: a machine that has no module yet, as
+# when the package is installed before v4l2loopback-dkms has built it, then
+# gets the device at the first boot after the module appears.
+write_if_changed "${root}/etc/modules-load.d/wbc.conf" "v4l2loopback"
+write_if_changed "${root}/etc/modprobe.d/wbc.conf" "options v4l2loopback ${options}"
+
+if ! "${modprobe}" -n v4l2loopback >/dev/null 2>&1; then
+    fail "the v4l2loopback kernel module is not installed. Install the v4l2loopback-dkms package (sudo apt install v4l2loopback-dkms) and run this again." 2
+fi
+
+if [ -d "${root}/sys/module/v4l2loopback" ]; then
+    for name in "${root}"/sys/class/video4linux/*/name; do
+        [ -f "${name}" ] || continue
+        [ "$(cat "${name}")" = "${label}" ] && exit 0
+    done
+    # Unloading would take the device away from whatever loaded it, which may
+    # be streaming into it right now.
+    fail "v4l2loopback is already loaded with other options, so there is no device labelled '${label}' yet. It was left alone; the setting has been saved and takes effect after a reboot." 3
+fi
+
+# kmod quotes a value that contains a space when it passes the options on, so
+# the label goes as one argument without quotes of its own.
+"${modprobe}" v4l2loopback devices=1 "video_nr=${number}" "card_label=${label}" exclusive_caps=1 ||
+    fail "modprobe could not load v4l2loopback"
+exit 0
