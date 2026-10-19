@@ -29,7 +29,7 @@ jobs:
         preset: [release, coverage]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install dependencies
         run: ./ci/install-deps-ubuntu.sh
@@ -37,7 +37,7 @@ jobs:
       # The model is fetched at configure time and checked against a pinned
       # hash, so a cached copy is only reused while that hash is unchanged.
       - name: Cache the segmentation model
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: models
           key: model-${{ hashFiles('cmake/FetchModel.cmake') }}
