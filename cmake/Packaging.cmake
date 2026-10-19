@@ -39,6 +39,11 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
     "Replaces the background of a webcam and offers the result as a virtual camera")
 set(CPACK_PACKAGING_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 set(CPACK_STRIP_FILES TRUE)
+# Directories as Debian expects them, 755, whatever the umask of the build:
+# /usr/libexec/wbc holds a program that runs as root, and a directory
+# writable by more than its owner would let others replace it.
+set(CPACK_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
+    OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${WBC_PACKAGE_MAINTAINER}")
 set(CPACK_DEBIAN_PACKAGE_SECTION "video")
