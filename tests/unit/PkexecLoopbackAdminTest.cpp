@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include "sink/ModuleInstallCommand.h"
 #include "sink/PkexecLoopbackAdmin.h"
 
 namespace {
@@ -87,9 +88,16 @@ TEST(PkexecLoopbackAdmin, TheLoadCommandCarriesEveryOptionTheDeviceNeeds) {
     EXPECT_NE(command.find("exclusive_caps=1"), std::string::npos);
 }
 
-TEST(PkexecLoopbackAdmin, TheInstallCommandNamesThePackageAndDoesNotRunItself) {
+// Each package is built with its own distribution's command; the window
+// must show that one, not a hard-coded apt line.
+TEST(PkexecLoopbackAdmin, TheInstallCommandIsTheOneThisBuildWasConfiguredWith) {
     wbc::PkexecLoopbackAdmin admin{NoDevices, [] { return false; }, NeverRuns};
-    EXPECT_NE(admin.InstallCommand().find("v4l2loopback-dkms"), std::string::npos);
+    EXPECT_EQ(admin.InstallCommand(), WBC_MODULE_INSTALL_COMMAND);
+}
+
+TEST(PkexecLoopbackAdmin, TheInstallCommandNamesTheModuleAndDoesNotRunItself) {
+    wbc::PkexecLoopbackAdmin admin{NoDevices, [] { return false; }, NeverRuns};
+    EXPECT_NE(admin.InstallCommand().find("v4l2loopback"), std::string::npos);
 }
 
 TEST(PkexecLoopbackAdmin, LoadingRunsTheCommandAndRepeatsTheProbe) {
@@ -312,7 +320,7 @@ TEST(PkexecLoopbackAdmin, WithoutAFlatpakTestItAssumesItIsNotSandboxed) {
 TEST(PkexecLoopbackAdmin, AHelperThatReportsTheModuleMissingSaysWhatToInstall) {
     ExitingWith run{wbc::PkexecLoopbackAdmin::kHelperModuleMissing};
     EXPECT_FALSE(run.admin.LoadModule());
-    EXPECT_NE(run.admin.LastError().find("v4l2loopback-dkms"), std::string::npos);
+    EXPECT_NE(run.admin.LastError().find(WBC_MODULE_INSTALL_COMMAND), std::string::npos);
     EXPECT_FALSE(run.admin.NeedsManualSetup());
 }
 

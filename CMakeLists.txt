@@ -46,7 +46,7 @@ endif ()
 # ximgproc's is: the application then speaks its source language, English.
 set(WBC_LANGUAGES ru de fr es)
 find_program(WBC_LRELEASE NAMES lrelease lrelease-qt6
-             HINTS /usr/lib/qt6/bin /usr/lib/x86_64-linux-gnu/qt6/bin)
+             HINTS /usr/lib/qt6/bin /usr/lib64/qt6/bin /usr/lib/x86_64-linux-gnu/qt6/bin)
 if (WBC_LRELEASE)
     file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/i18n")
     foreach (lang IN LISTS WBC_LANGUAGES)
@@ -196,7 +196,20 @@ install(FILES "${CMAKE_SOURCE_DIR}/LICENSE" "${CMAKE_SOURCE_DIR}/THIRD-PARTY-NOT
 # The one thing that runs as root: it makes the virtual camera load at every
 # boot, so the password is asked for once rather than after every restart.
 # libexec, because nobody is meant to run it from a menu or a PATH lookup.
-install(PROGRAMS "${CMAKE_SOURCE_DIR}/packaging/wbc-setup-loopback"
+#
+# Where the kernel module comes from differs between distributions, and the
+# helper and the window both tell the user how to get it, so each package is
+# built with its own distribution's command.
+set(WBC_MODULE_INSTALL_COMMAND "sudo apt install v4l2loopback-dkms" CACHE STRING
+    "The command the program and its helper give for installing v4l2loopback")
+configure_file("${CMAKE_SOURCE_DIR}/src/sink/ModuleInstallCommand.h.in"
+               "${CMAKE_BINARY_DIR}/generated/sink/ModuleInstallCommand.h" @ONLY)
+target_include_directories(wbc_core PUBLIC "${CMAKE_BINARY_DIR}/generated")
+configure_file("${CMAKE_SOURCE_DIR}/packaging/wbc-setup-loopback.in"
+               "${CMAKE_BINARY_DIR}/wbc-setup-loopback" @ONLY
+               FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                                GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+install(PROGRAMS "${CMAKE_BINARY_DIR}/wbc-setup-loopback"
         DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}/wbc")
 
 # The polkit action that gives the helper's password prompt its own words.
@@ -220,20 +233,20 @@ target_compile_definitions(wbc_core PUBLIC
 
 # A build run from the IDE or the build directory has no installed helper, and
 # its fallback, a one-off modprobe, is lost at the next reboot. Such a build
-# may instead run the helper from the source tree. Off for Release, which is
+# may instead run the helper configured into its build directory. Off for Release, which is
 # what gets installed and packaged: an installed program must not reach back
-# into the tree it was built from, nor carry that tree's path.
+# into the tree it was built in, nor carry that tree's path.
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
     set(wbc_source_helper_default OFF)
 else ()
     set(wbc_source_helper_default ON)
 endif ()
 option(WBC_SOURCE_TREE_HELPER
-       "Let a build that is not installed run packaging/wbc-setup-loopback from the source tree"
+       "Let a build that is not installed run the helper from its build directory"
        ${wbc_source_helper_default})
 if (WBC_SOURCE_TREE_HELPER)
     target_compile_definitions(wbc_core PUBLIC
-        WBC_SOURCE_SETUP_HELPER_PATH="${CMAKE_SOURCE_DIR}/packaging/wbc-setup-loopback")
+        WBC_SOURCE_SETUP_HELPER_PATH="${CMAKE_BINARY_DIR}/wbc-setup-loopback")
 endif ()
 
 include(Packaging)

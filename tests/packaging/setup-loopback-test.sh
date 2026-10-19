@@ -6,11 +6,12 @@
 # modprobe, so that every exit code and the idempotence promise are checked
 # without root, without the kernel module and without touching /etc.
 #
-# Usage: setup-loopback-test.sh <path to wbc-setup-loopback>
+# Usage: setup-loopback-test.sh <path to wbc-setup-loopback> <module install command>
 
 set -u
 
 helper="$1"
+install_command="$2"
 work="$(mktemp -d)"
 trap 'rm -rf "${work}"' EXIT
 
@@ -115,7 +116,7 @@ expect_status 0 "stale file"
 root="$(new_root missing)"
 run "${root}" "${label}" 10
 expect_status 2 "module missing"
-grep -q "v4l2loopback-dkms" "${root}/stderr" || fail "module missing: the message does not name the package"
+grep -qF -- "${install_command}" "${root}/stderr" || fail "module missing: the message does not give this build's install command"
 [ "$(loads "${root}")" -eq 0 ] || fail "module missing: modprobe tried to load it"
 [ -f "${root}/${modprobe_d}" ] || fail "module missing: the boot-time setting was not saved"
 

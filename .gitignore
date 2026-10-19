@@ -31,3 +31,6 @@ coverage.xml
 # Planning documents written for the coding agent while the project was
 # built. What they decided, and why, is in docs/engineering-notes.md.
 docs/superpowers/
+
+# Packages built by ci/build-*.sh
+dist/

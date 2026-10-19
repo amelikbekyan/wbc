@@ -55,9 +55,67 @@ see as an ordinary camera named **Webcam Background Changer**.
 
 ## Installing
 
-There are no prebuilt packages yet; it is built from source.
+Each [release](https://github.com/amelikbekyan/wbc/releases) has packages
+for Ubuntu 26.04, Debian 13 and Fedora 44, and a `PKGBUILD` for Arch Linux.
+Each package sets up the virtual camera while it installs, so the program
+never has to ask for a password, and the camera comes back at every boot. The
+kernel module, v4l2loopback, is a package of its own, which each
+distribution gets from a different place.
 
-### Ubuntu 24.04
+`SHA256SUMS` on the release page lists the checksum of every file; check the
+ones you downloaded with `sha256sum --check --ignore-missing SHA256SUMS`.
+
+### Ubuntu 26.04 and Debian 13
+
+Download `wbc_0.1.0-1~ubuntu26.04_amd64.deb` or
+`wbc_0.1.0-1~debian13_amd64.deb`, then:
+
+```bash
+sudo apt install ./wbc_0.1.0-1~ubuntu26.04_amd64.deb
+```
+
+apt also installs the recommended `v4l2loopback-dkms`, which builds the
+module for your kernel.
+
+### Fedora 44
+
+The module is not in Fedora's own repositories but in RPM Fusion's. Enable
+RPM Fusion's *free* repository first, as its
+[configuration page](https://rpmfusion.org/Configuration) describes, then
+download `wbc-0.1.0-1.fc44.x86_64.rpm` and:
+
+```bash
+sudo dnf install ./wbc-0.1.0-1.fc44.x86_64.rpm
+```
+
+dnf then also installs the recommended `akmod-v4l2loopback`, which builds the
+module for your kernel; the virtual camera appears after the next reboot.
+Without RPM Fusion the package installs all the same, and the program says
+what to install when you open it.
+
+### Arch Linux
+
+Arch updates OpenCV and ONNX Runtime often, and a program built against
+older ones stops starting, so the release has a `PKGBUILD` rather than a
+package: `makepkg` builds it against the libraries your system has. Download
+`PKGBUILD` and `wbc.install` into an empty directory, and there:
+
+```bash
+makepkg -si
+sudo pacman -S v4l2loopback-dkms
+```
+
+`makepkg` runs the tests before it installs. Should the program stop starting
+after an update, run `makepkg -si` again.
+
+### Building from source
+
+Ubuntu 24.04 and Debian 12 do not package ONNX Runtime, so there are no
+packages for them yet; build it from source, as below. The same works on
+any other distribution that has the libraries listed under *What the build
+needs*.
+
+#### Ubuntu 24.04
 
 Ubuntu 24.04 does not package ONNX Runtime, so the script that CI uses fetches
 the official release, checks it against a pinned hash, and installs it in
@@ -72,7 +130,7 @@ cmake --build --preset release
 sudo cmake --install build/release
 ```
 
-### Ubuntu 26.04
+#### Ubuntu 26.04
 
 ONNX Runtime is packaged here, so everything comes from the archive:
 
@@ -86,7 +144,7 @@ cmake --build --preset release
 sudo cmake --install build/release
 ```
 
-### What the build needs
+#### What the build needs
 
 - CMake 3.21 or newer, Ninja, and a C++20 compiler
 - Qt 6.4 or newer (Core, Gui, Widgets)
@@ -107,7 +165,7 @@ cmake --install build/release --prefix ~/.local
 can also be run from the build directory without installing:
 `./build/release/wbc`.
 
-### Debian package
+#### Debian package
 
 A `.deb` is built with CPack. It installs under `/usr`, sets up the virtual
 camera at install time, recommends `v4l2loopback-dkms`, and removes its
@@ -120,22 +178,23 @@ cmake --build --preset release
 sudo apt install ./build/release/wbc_*.deb
 ```
 
-Build it on Ubuntu 26.04, where ONNX Runtime is a package the `.deb` can
-depend on. On 24.04 it builds, but neither declares nor carries the copy in
+Build it on Ubuntu 26.04 or Debian 13, where ONNX Runtime is a package the
+`.deb` can depend on; `ci/build-deb.sh` is how the release builds them. On 24.04 it builds, but neither declares nor carries the copy in
 `/opt/onnxruntime`, so it only runs where that copy is present too.
 
 ### Removing it
 
-Installed from the Debian package:
-
 ```bash
-sudo apt purge wbc
+sudo apt purge wbc          # Ubuntu, Debian
+sudo dnf remove wbc         # Fedora
+sudo pacman -R wbc          # Arch Linux
 ```
 
-`purge` also deletes `/etc/modules-load.d/wbc.conf` and
+These also delete `/etc/modules-load.d/wbc.conf` and
 `/etc/modprobe.d/wbc.conf`, so the virtual camera is no longer created at
-boot; `apt remove` keeps them. Installed with `cmake --install`, delete what
-it installed, as listed in the build directory, and the same two files:
+boot; `apt remove`, unlike `purge`, keeps them. Installed with
+`cmake --install`, delete what it installed, as listed in the build
+directory, and the same two files:
 
 ```bash
 xargs -d '\n' sudo rm -f < build/release/install_manifest.txt
@@ -179,9 +238,10 @@ prompt is the generic one and the setup works all the same: the program finds
 its helper beside itself.
 
 A Debug build run from the IDE or the build directory, without installing
-it, uses `packaging/wbc-setup-loopback` from the source tree, also with the
-generic prompt. A Release build does not, as it is the one that gets
-installed; `-DWBC_SOURCE_TREE_HELPER` decides.
+it, uses the copy of the helper CMake writes into its build directory,
+`build/<preset>/wbc-setup-loopback`, also with the generic prompt. A Release
+build does not, as it is the one that gets installed;
+`-DWBC_SOURCE_TREE_HELPER` decides.
 
 To set it up by hand, with the program installed:
 

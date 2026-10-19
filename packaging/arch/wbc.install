@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2026 Arthur Melikbekyan
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# pacman's install script for the PKGBUILD. It does what the Debian postinst
+# and postrm do, through the same hook: set the virtual camera up at install,
+# never failing the installation, and on removal delete the boot-time setting
+# the helper wrote. An upgrade keeps it.
+
+post_install() {
+    /usr/libexec/wbc/wbc-install-hook || true
+}
+
+post_upgrade() {
+    post_install
+}
+
+post_remove() {
+    rm -f /etc/modules-load.d/wbc.conf /etc/modprobe.d/wbc.conf
+}

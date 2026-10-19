@@ -1,0 +1,19 @@
+#!/bin/sh
+# SPDX-FileCopyrightText: 2026 Arthur Melikbekyan
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Sets up the virtual camera at install time, so that the window never has
+# to ask for a password. Every package runs it after installing: the Debian
+# postinst, the RPM %post and the Arch post_install, so the three formats
+# behave alike and are tested once, here.
+#
+# It must never fail the installation: the module may not be built yet --
+# it is only recommended, and may be installed after this package -- or the
+# system may be a container with no kernel modules at all. The helper writes
+# the boot-time configuration before it checks for the module, so even then
+# the device appears after a reboot.
+
+"@WBC_SETUP_HELPER@" "@WBC_VIRTUAL_CAMERA_LABEL@" @WBC_VIRTUAL_CAMERA_NUMBER@ ||
+    echo "wbc: the virtual camera could not be set up now (see above). It will be after a reboot once v4l2loopback is installed, or the program will offer to do it." >&2 || true
+
+exit 0

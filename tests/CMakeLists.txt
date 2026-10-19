@@ -72,7 +72,8 @@ set_tests_properties(ui PROPERTIES LABELS ui ENVIRONMENT "QT_QPA_PLATFORM=offscr
 # dash on Debian and Ubuntu, so a bashism fails here before it fails there.
 add_test(NAME setup_loopback
          COMMAND sh "${CMAKE_CURRENT_SOURCE_DIR}/packaging/setup-loopback-test.sh"
-                    "${CMAKE_SOURCE_DIR}/packaging/wbc-setup-loopback")
+                    "${CMAKE_BINARY_DIR}/wbc-setup-loopback"
+                    "${WBC_MODULE_INSTALL_COMMAND}")
 set_tests_properties(setup_loopback PROPERTIES LABELS unit)
 
 add_test(NAME polkit_policy
@@ -81,22 +82,42 @@ add_test(NAME polkit_policy
                     "${WBC_SETUP_HELPER}")
 set_tests_properties(polkit_policy PROPERTIES LABELS unit)
 
-# The Debian maintainer scripts, configured a second time with the helper and
-# /etc pointed into the build tree. A function, so that the variables changed
-# for it do not leak into the polkit test above or the package itself.
+# The install hook and the Debian maintainer scripts, configured a second
+# time with the helper, the hook and /etc pointed into the build tree. A
+# function, so that the variables changed for it do not leak into the polkit
+# test above or the package itself.
 function(wbc_add_maintainer_scripts_test)
     set(root "${CMAKE_CURRENT_BINARY_DIR}/maintainer-scripts")
     set(WBC_SETUP_HELPER "${root}/libexec/wbc-setup-loopback")
+    set(WBC_INSTALL_HOOK "${root}/libexec/wbc-install-hook")
     set(WBC_ETC "${root}/etc")
+    configure_file("${CMAKE_SOURCE_DIR}/packaging/wbc-install-hook.in" "${WBC_INSTALL_HOOK}" @ONLY
+                   FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
     foreach (script IN ITEMS postinst postrm)
         configure_file("${CMAKE_SOURCE_DIR}/packaging/debian/${script}.in" "${root}/${script}" @ONLY)
     endforeach ()
     add_test(NAME maintainer_scripts
              COMMAND sh "${CMAKE_CURRENT_SOURCE_DIR}/packaging/maintainer-scripts-test.sh"
-                        "${root}/postinst" "${root}/postrm" "${WBC_SETUP_HELPER}" "${WBC_ETC}")
+                        "${WBC_INSTALL_HOOK}" "${root}/postinst" "${root}/postrm"
+                        "${WBC_SETUP_HELPER}" "${WBC_ETC}")
     set_tests_properties(maintainer_scripts PROPERTIES LABELS unit)
 endfunction()
 wbc_add_maintainer_scripts_test()
+
+add_test(NAME rpm_scriptlets
+         COMMAND sh "${CMAKE_CURRENT_SOURCE_DIR}/packaging/rpm-scriptlets-test.sh"
+                    "${CMAKE_SOURCE_DIR}/packaging/rpm/wbc.spec")
+set_tests_properties(rpm_scriptlets PROPERTIES LABELS unit)
+
+add_test(NAME arch_install
+         COMMAND sh "${CMAKE_CURRENT_SOURCE_DIR}/packaging/arch-install-test.sh"
+                    "${CMAKE_SOURCE_DIR}/packaging/arch/wbc.install")
+set_tests_properties(arch_install PROPERTIES LABELS unit)
+
+add_test(NAME release_scripts
+         COMMAND sh "${CMAKE_CURRENT_SOURCE_DIR}/packaging/release-scripts-test.sh"
+                    "${CMAKE_SOURCE_DIR}/ci")
+set_tests_properties(release_scripts PROPERTIES LABELS unit)
 
 add_test(NAME desktop_metadata
          COMMAND sh "${CMAKE_CURRENT_SOURCE_DIR}/packaging/desktop-metadata-test.sh"

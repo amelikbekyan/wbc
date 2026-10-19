@@ -77,7 +77,7 @@ write_if_changed "${root}/etc/modules-load.d/wbc.conf" "v4l2loopback"
 write_if_changed "${root}/etc/modprobe.d/wbc.conf" "options v4l2loopback ${options}"
 
 if ! "${modprobe}" -n v4l2loopback >/dev/null 2>&1; then
-    fail "the v4l2loopback kernel module is not installed. Install the v4l2loopback-dkms package (sudo apt install v4l2loopback-dkms) and run this again." 2
+    fail "the v4l2loopback kernel module is not installed. Install it with: @WBC_MODULE_INSTALL_COMMAND@ -- and run this again." 2
 fi
 
 if [ -d "${root}/sys/module/v4l2loopback" ]; then

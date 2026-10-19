@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <filesystem>
 
+#include "sink/ModuleInstallCommand.h"
+
 namespace {
 
 // The label is interpolated into a command string that is executed through
@@ -142,7 +144,7 @@ bool PkexecLoopbackAdmin::NeedsManualSetup() const {
 }
 
 std::string PkexecLoopbackAdmin::InstallCommand() const {
-    return "sudo apt install v4l2loopback-dkms";
+    return WBC_MODULE_INSTALL_COMMAND;
 }
 
 bool PkexecLoopbackAdmin::LoadModule() {

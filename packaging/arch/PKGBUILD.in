@@ -1,0 +1,52 @@
+# Maintainer: Arthur Melikbekyan <arthur.melikbekyan@protonmail.com>
+#
+# Built by the user with makepkg -si, against the libraries Arch has that
+# day: Arch updates OpenCV and ONNX Runtime often, and a binary built on the
+# release day would stop starting after the next update. The release fills in
+# the version and the tarball's checksum; ci/build-arch.sh does the same for a
+# tarball made from the checkout.
+
+pkgname=wbc
+pkgver=@VERSION@
+pkgrel=1
+pkgdesc="Blur or replace the background of your webcam"
+arch=(x86_64)
+url="https://github.com/amelikbekyan/wbc"
+# The program is GPL; the segmentation model it installs is Apache-2.0.
+license=('GPL-3.0-or-later' 'Apache-2.0')
+depends=(qt6-base opencv onnxruntime hicolor-icon-theme)
+makedepends=(cmake ninja qt6-tools gtest)
+# The window tests measure text, and a clean chroot has no font of its own.
+checkdepends=(ttf-dejavu)
+optdepends=('v4l2loopback-dkms: the virtual camera')
+install=wbc.install
+# The model is fetched at configure time from a source tree; makepkg fetches
+# it instead, and CMake still checks its hash.
+source=("wbc-${pkgver}.tar.gz::${url}/archive/refs/tags/v${pkgver}.tar.gz"
+        "selfie_segmentation.onnx::https://huggingface.co/onnx-community/mediapipe_selfie_segmentation/resolve/main/onnx/model.onnx")
+sha256sums=('@SOURCE_SHA256@'
+            '3241ac4ad8aa35bdaf33946776db29f7c283a413aa0b0dacb9483594b4531aad')
+
+prepare() {
+    mkdir -p "wbc-${pkgver}/models"
+    cp selfie_segmentation.onnx "wbc-${pkgver}/models/"
+}
+
+build() {
+    # WBC_SOURCE_TREE_HELPER off: it defaults on for any build type but
+    # Release, and would compile this build directory's path into the program.
+    cmake -S "wbc-${pkgver}" -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=None \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DWBC_SOURCE_TREE_HELPER=OFF \
+        -DWBC_MODULE_INSTALL_COMMAND="sudo pacman -S v4l2loopback-dkms"
+    cmake --build build
+}
+
+check() {
+    ctest --test-dir build -L "unit|ui" --output-on-failure
+}
+
+package() {
+    DESTDIR="${pkgdir}" cmake --install build
+}

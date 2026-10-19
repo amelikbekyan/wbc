@@ -19,7 +19,7 @@ Only the latest release, and the `main` branch, receive fixes.
 Most of wbc runs as the user who starts it. One part does not, and it is
 where a report is most valuable:
 
-- `packaging/wbc-setup-loopback`, installed to `libexec/wbc/`, runs as root:
+- `packaging/wbc-setup-loopback.in`, installed to `libexec/wbc/`, runs as root:
   through `pkexec` when the window sets up the virtual camera, from the
   Debian package's `postinst`, or by hand with `sudo`. It writes
   `/etc/modules-load.d/wbc.conf` and `/etc/modprobe.d/wbc.conf` and runs

@@ -25,6 +25,13 @@ endif ()
 # PkexecLoopbackAdmin's default videoNumber.
 set(WBC_VIRTUAL_CAMERA_NUMBER 10)
 
+# The install-time setup every package format runs; see the hook's comment.
+set(WBC_INSTALL_HOOK "${CMAKE_INSTALL_FULL_LIBEXECDIR}/wbc/wbc-install-hook")
+configure_file("${CMAKE_SOURCE_DIR}/packaging/wbc-install-hook.in"
+               "${CMAKE_BINARY_DIR}/wbc-install-hook" @ONLY)
+install(PROGRAMS "${CMAKE_BINARY_DIR}/wbc-install-hook"
+        DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}/wbc")
+
 set(WBC_ETC "/etc")
 foreach (script IN ITEMS postinst postrm)
     configure_file("${CMAKE_SOURCE_DIR}/packaging/debian/${script}.in"
@@ -45,6 +52,15 @@ set(CPACK_STRIP_FILES TRUE)
 set(CPACK_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
     OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+# The same version is built for more than one distribution, and each needs a
+# file of its own: wbc_0.1.0-1~ubuntu26.04_amd64.deb. The tilde sorts the
+# package below a plain 0.1.0-1, as Debian does for backports. Empty keeps the
+# name a build from source has always had.
+set(WBC_PACKAGE_DISTRO "" CACHE STRING
+    "The distribution a Debian package is built for, e.g. ubuntu26.04, put in its release")
+if (WBC_PACKAGE_DISTRO)
+    set(CPACK_DEBIAN_PACKAGE_RELEASE "1~${WBC_PACKAGE_DISTRO}")
+endif ()
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${WBC_PACKAGE_MAINTAINER}")
 set(CPACK_DEBIAN_PACKAGE_SECTION "video")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)

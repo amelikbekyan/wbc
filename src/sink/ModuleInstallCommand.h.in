@@ -1,0 +1,9 @@
+// SPDX-FileCopyrightText: 2026 Arthur Melikbekyan
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+#pragma once
+
+// Configured by CMake from WBC_MODULE_INSTALL_COMMAND. A header rather than a
+// compile definition because Fedora's command carries a "# from RPM Fusion"
+// comment, and a '#' does not survive the trip through compiler flags.
+#define WBC_MODULE_INSTALL_COMMAND "@WBC_MODULE_INSTALL_COMMAND@"

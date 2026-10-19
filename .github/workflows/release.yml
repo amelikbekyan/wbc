@@ -1,0 +1,187 @@
+# SPDX-FileCopyrightText: 2026 Arthur Melikbekyan
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Builds the packages of a release, each in a container of the distribution
+# it is for, installs each into a clean container of that distribution, and
+# attaches them to a draft GitHub release. Nothing is published: the author
+# reads the draft and publishes it by hand.
+#
+# Run by hand (workflow_dispatch), or for a pull request that touches the
+# packaging, it builds and verifies the packages and keeps them as the run's
+# artifacts, without a release: a change that breaks a package shows before
+# it is merged, not on the day of a release.
+#
+# Every step is a script in ci/, which runs the same in a docker container of
+# that distribution on a person's machine.
+
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+    paths:
+      - 'packaging/**'
+      - 'ci/**'
+      - 'cmake/Packaging.cmake'
+      - '.github/workflows/release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deb:
+    name: deb (${{ matrix.distro }})
+    runs-on: ubuntu-24.04
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: ubuntu:26.04
+            distro: ubuntu26.04
+          - image: debian:13
+            distro: debian13
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install dependencies
+        run: ci/install-deps-debian.sh
+      - name: Build, test and package
+        run: ci/build-deb.sh ${{ matrix.distro }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: deb-${{ matrix.distro }}
+          path: dist/*.deb
+          if-no-files-found: error
+
+  verify-deb:
+    name: verify deb (${{ matrix.distro }})
+    needs: deb
+    runs-on: ubuntu-24.04
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: ubuntu:26.04
+            distro: ubuntu26.04
+          - image: debian:13
+            distro: debian13
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v8
+        with:
+          name: deb-${{ matrix.distro }}
+          path: dist
+      - name: Install and check in a clean container
+        run: ci/verify-package.sh dist/*.deb
+
+  rpm:
+    runs-on: ubuntu-24.04
+    container: fedora:44
+    steps:
+      # git before the checkout, so that it is a repository: ci/build-rpm.sh
+      # makes the source tarball with git archive.
+      - name: Install git
+        run: dnf install -y git-core
+      - uses: actions/checkout@v5
+      - name: Install dependencies
+        run: ci/install-deps-fedora.sh
+      - name: Build, test and package
+        run: ci/build-rpm.sh
+      - uses: actions/upload-artifact@v7
+        with:
+          name: rpm-fedora44
+          path: dist/*.rpm
+          if-no-files-found: error
+
+  # Without RPM Fusion, where the recommended module lives: the package must
+  # install all the same.
+  verify-rpm:
+    needs: rpm
+    runs-on: ubuntu-24.04
+    container: fedora:44
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v8
+        with:
+          name: rpm-fedora44
+          path: dist
+      - name: Install and check in a clean container
+        run: ci/verify-package.sh dist/*.rpm
+
+  # The release carries the PKGBUILD, not this package: it is built here so
+  # that a PKGBUILD that does not build, or a package that does not work, is
+  # caught before a user meets it.
+  arch:
+    runs-on: ubuntu-24.04
+    container: archlinux:latest
+    steps:
+      - name: Install git
+        run: pacman -Syu --noconfirm --needed git
+      - uses: actions/checkout@v5
+      - name: Build with makepkg, test, install and check
+        run: ci/build-arch.sh
+      - uses: actions/upload-artifact@v7
+        with:
+          name: arch
+          path: dist/*.pkg.tar.zst
+          if-no-files-found: error
+
+  verify-arch:
+    needs: arch
+    runs-on: ubuntu-24.04
+    container: archlinux:latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v8
+        with:
+          name: arch
+          path: dist
+      - name: Install and check in a clean container
+        run: ci/verify-package.sh dist/*.pkg.tar.zst
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [verify-deb, verify-rpm, verify-arch]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check the tag against the sources
+        run: ci/check-tag-version.sh "${GITHUB_REF_NAME}"
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: '{deb,rpm}-*'
+          path: assets
+          merge-multiple: true
+
+      # The PKGBUILD points at the tag's tarball, which GitHub makes on
+      # request; its checksum is taken from that tarball, the file a user's
+      # makepkg will download.
+      - name: Write the PKGBUILD
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          curl -sSfL --retry 3 -o source.tar.gz \
+            "https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${GITHUB_REF_NAME}.tar.gz"
+          sha256="$(sha256sum source.tar.gz | cut -d' ' -f1)"
+          sed -e "s/@VERSION@/${version}/" -e "s/@SOURCE_SHA256@/${sha256}/" \
+            packaging/arch/PKGBUILD.in >assets/PKGBUILD
+          cp packaging/arch/wbc.install assets/
+
+      - name: Write SHA256SUMS
+        working-directory: assets
+        run: sha256sum -- * >SHA256SUMS && cat SHA256SUMS
+
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          ci/release-notes.sh "${version}" >notes.md
+          gh release create "${GITHUB_REF_NAME}" --draft --verify-tag \
+            --title "wbc ${version}" --notes-file notes.md assets/*

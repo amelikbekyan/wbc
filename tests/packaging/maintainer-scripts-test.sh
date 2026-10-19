@@ -2,18 +2,20 @@
 # SPDX-FileCopyrightText: 2026 Arthur Melikbekyan
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-# Runs the Debian postinst and postrm, configured by tests/CMakeLists.txt
-# with the helper and /etc pointed into the build tree, so that nothing here
-# needs root or touches the real system.
+# Runs the install hook every package calls and the Debian postinst and
+# postrm, configured by tests/CMakeLists.txt with the helper, the hook and
+# /etc pointed into the build tree, so that nothing here needs root or
+# touches the real system.
 #
-# Usage: maintainer-scripts-test.sh <postinst> <postrm> <fake helper path> <fake etc>
+# Usage: maintainer-scripts-test.sh <install hook> <postinst> <postrm> <fake helper path> <fake etc>
 
 set -u
 
-postinst="$1"
-postrm="$2"
-helper="$3"
-etc="$4"
+hook="$1"
+postinst="$2"
+postrm="$3"
+helper="$4"
+etc="$5"
 
 failures=0
 fail() {
@@ -32,31 +34,42 @@ FAKE
 chmod +x "${helper}"
 log="${helper}.log"
 
-# Whatever the helper answers, the installation goes on.
+# Whatever the helper answers, the hook succeeds, so no package's
+# installation fails because of it.
 for code in 0 1 2 3; do
     rm -f "${log}"
-    FAKE_HELPER_EXIT="${code}" sh "${postinst}" configure 2>"${log}.stderr"
+    FAKE_HELPER_EXIT="${code}" "${hook}" 2>"${log}.stderr"
     status=$?
-    [ "${status}" -eq 0 ] || fail "postinst exited ${status} when the helper exited ${code}"
+    [ "${status}" -eq 0 ] || fail "the hook exited ${status} when the helper exited ${code}"
     [ "$(cat "${log}")" = "Webcam Background Changer 10" ] ||
-        fail "postinst passed '$(cat "${log}")' to the helper"
+        fail "the hook passed '$(cat "${log}")' to the helper"
     if [ "${code}" -ne 0 ]; then
         grep -q "could not be set up now" "${log}.stderr" ||
-            fail "postinst said nothing when the helper exited ${code}"
-    elif [ -s "${log}.stderr" ] && grep -q "could not be set up now" "${log}.stderr"; then
-        fail "postinst reported a failure when the helper succeeded"
+            fail "the hook said nothing when the helper exited ${code}"
+    elif grep -q "could not be set up now" "${log}.stderr"; then
+        fail "the hook reported a failure when the helper succeeded"
     fi
 done
 
 # A helper that is not there at all, as when the package is half-unpacked.
 mv "${helper}" "${helper}.away"
-sh "${postinst}" configure 2>/dev/null || fail "postinst failed without a helper"
+"${hook}" 2>/dev/null || fail "the hook failed without a helper"
 mv "${helper}.away" "${helper}"
 
-# Only configure runs it; an aborted upgrade does not.
+# The postinst runs the hook on configure, and only then: an aborted upgrade
+# does not.
+rm -f "${log}"
+sh "${postinst}" configure 2>/dev/null || fail "postinst configure failed"
+[ -e "${log}" ] || fail "postinst configure did not run the hook"
 rm -f "${log}"
 sh "${postinst}" abort-upgrade 1.0 || fail "postinst abort-upgrade failed"
-[ ! -e "${log}" ] || fail "postinst ran the helper for abort-upgrade"
+[ ! -e "${log}" ] || fail "postinst ran the hook for abort-upgrade"
+
+# Nor does a failing or missing hook fail the postinst.
+FAKE_HELPER_EXIT=1 sh "${postinst}" configure 2>/dev/null || fail "postinst failed when the helper did"
+mv "${hook}" "${hook}.away"
+sh "${postinst}" configure 2>/dev/null || fail "postinst failed without the hook"
+mv "${hook}.away" "${hook}"
 
 # remove keeps the configuration; purge deletes it.
 mkdir -p "${etc}/modules-load.d" "${etc}/modprobe.d"
@@ -75,4 +88,4 @@ if [ "${failures}" -ne 0 ]; then
     echo "${failures} check(s) failed" >&2
     exit 1
 fi
-echo "the maintainer scripts never fail the installation and purge what they should"
+echo "the install hook and the maintainer scripts never fail the installation and purge what they should"
